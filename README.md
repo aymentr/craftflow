@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CraftFlow
 
-## Getting Started
+Mobile-first job capture, invoice generation, email sending, and payment reminders for small craft businesses in Germany.
 
-First, run the development server:
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without Supabase environment variables, the app runs in demo mode with local seed data. With Supabase configured, authenticated routes are protected and data is loaded through RLS-scoped Supabase queries.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment
 
-## Learn More
+Copy `.env.example` to `.env.local` and fill in:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+INVOICE_FROM_EMAIL=
+CRON_SECRET=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`SUPABASE_SERVICE_ROLE_KEY` is only used by the reminder processing route. Never expose it to the browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Supabase Setup
 
-## Deploy on Vercel
+Run [lib/db/schema.sql](./lib/db/schema.sql) in the Supabase SQL editor. It creates:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- company-scoped tables for customers, jobs, invoices, invoice items, reminders, and activity logs
+- invoice number sequencing with `YYYY-0001` numbers per company
+- invoice total recalculation triggers
+- row-level security policies for company-owned data
+- private Storage buckets for job photos and invoice PDFs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Reminder Processing
+
+Call the reminder endpoint from a cron scheduler:
+
+```bash
+curl -X POST https://your-app.example.com/api/reminders/process \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+The route sends due reminders, marks reminder status, and updates sent invoices to overdue when appropriate.
+
+## Current MVP Surface
+
+- Supabase Auth login/signup/logout
+- company profile
+- customer create/update/delete
+- job create/update/delete/complete
+- invoice draft generation from completed jobs
+- structured invoice item editing with cent-based totals
+- PDF generation and authenticated PDF download
+- invoice email sending with PDF attachment through Resend
+- invoice status tracking
+- payment reminder scheduling and processing
