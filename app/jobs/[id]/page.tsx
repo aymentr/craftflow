@@ -3,6 +3,7 @@ import { CheckCircle2, FileText, Trash2 } from "lucide-react";
 import { JobForm } from "@/components/jobs/job-form";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { customerDisplayName, getCustomers, getJobById } from "@/lib/db/queries";
 import { completeJob, deleteJobById, updateJobById } from "@/server/actions/jobs";
@@ -63,9 +64,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         <JobForm customers={customers} job={job} action={updateAction} />
       </section>
       <form action={deleteAction} className="mt-4">
-        <Button type="submit" variant="danger" className="w-full">
+        <ConfirmSubmitButton message="Diesen Job wirklich löschen?" className="w-full">
           <Trash2 size={18} /> Job löschen
-        </Button>
+        </ConfirmSubmitButton>
       </form>
     </AppShell>
   );

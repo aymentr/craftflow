@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { QuickActionButton } from "@/components/layout/quick-action-button";
+import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { customerDisplayName, getJobs } from "@/lib/db/queries";
@@ -18,7 +19,11 @@ export default async function JobsPage() {
         <div className="hidden md:block"><QuickActionButton href="/jobs/new" label="Job" /></div>
       </div>
       {jobs.length === 0 ? (
-        <EmptyState title="Noch keine Jobs" description="Erfasse den ersten Einsatz direkt nach dem Kundentermin." />
+        <EmptyState
+          title="Noch keine Jobs"
+          description="Erfasse den Einsatz, notiere Arbeitszeit und Material, und markiere ihn nach Abschluss als erledigt."
+          action={<ButtonLink href="/jobs/new">Job erfassen</ButtonLink>}
+        />
       ) : (
         <div className="grid gap-3">
           {jobs.map((job) => (

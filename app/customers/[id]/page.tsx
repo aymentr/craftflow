@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getCustomerBundle } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
@@ -24,34 +25,42 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       </section>
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-bold">Jobs</h2>
-        <div className="grid gap-3">
-          {jobs.map((job) => (
-            <a key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4">
-              <span className="font-semibold">{job.title}</span>
-              <StatusBadge status={job.status} />
-            </a>
-          ))}
-        </div>
+        {jobs.length === 0 ? (
+          <EmptyState title="Keine Jobs" description="Für diesen Kunden wurde noch kein Einsatz erfasst." />
+        ) : (
+          <div className="grid gap-3">
+            {jobs.map((job) => (
+              <a key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4">
+                <span className="font-semibold">{job.title}</span>
+                <StatusBadge status={job.status} />
+              </a>
+            ))}
+          </div>
+        )}
       </section>
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-bold">Rechnungen</h2>
-        <div className="grid gap-3">
-          {invoices.map((invoice) => (
-            <a key={invoice.id} href={`/invoices/${invoice.id}`} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4">
-              <span className="font-semibold">{invoice.invoice_number}</span>
-              <span>{formatCurrency(invoice.total)}</span>
-            </a>
-          ))}
-        </div>
+        {invoices.length === 0 ? (
+          <EmptyState title="Keine Rechnungen" description="Sobald ein Job abgeschlossen ist, kannst du daraus eine Rechnung erstellen." />
+        ) : (
+          <div className="grid gap-3">
+            {invoices.map((invoice) => (
+              <a key={invoice.id} href={`/invoices/${invoice.id}`} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4">
+                <span className="font-semibold">{invoice.invoice_number}</span>
+                <span>{formatCurrency(invoice.total)}</span>
+              </a>
+            ))}
+          </div>
+        )}
       </section>
       <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-5">
         <h2 className="mb-4 text-lg font-bold">Kundendaten bearbeiten</h2>
         <CustomerForm customer={customer} action={updateAction} />
       </section>
       <form action={deleteAction} className="mt-4">
-        <Button type="submit" variant="danger" className="w-full">
+        <ConfirmSubmitButton message="Diesen Kunden wirklich löschen? Zugehörige Daten können davon betroffen sein." className="w-full">
           <Trash2 size={18} /> Kunde löschen
-        </Button>
+        </ConfirmSubmitButton>
       </form>
     </AppShell>
   );

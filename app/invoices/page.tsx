@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { customerDisplayName, getInvoices } from "@/lib/db/queries";
@@ -14,7 +15,11 @@ export default async function InvoicesPage() {
         <p className="text-sm text-zinc-600">Entwürfe, offene Beträge und Zahlungseingänge.</p>
       </div>
       {invoices.length === 0 ? (
-        <EmptyState title="Noch keine Rechnungen" description="Schließe einen Job ab und erstelle daraus den ersten Entwurf." />
+        <EmptyState
+          title="Noch keine Rechnungen"
+          description="Schließe einen Job ab und erstelle daraus den ersten Rechnungsentwurf."
+          action={<ButtonLink href="/jobs">Zu den Jobs</ButtonLink>}
+        />
       ) : (
         <div className="grid gap-3">
           {invoices.map((invoice) => (

@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { QuickActionButton } from "@/components/layout/quick-action-button";
+import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getCustomers } from "@/lib/db/queries";
 
@@ -16,7 +17,11 @@ export default async function CustomersPage() {
         <div className="hidden md:block"><QuickActionButton href="/customers/new" label="Kunde" /></div>
       </div>
       {customers.length === 0 ? (
-        <EmptyState title="Noch keine Kunden" description="Lege den ersten Kunden an, bevor du Jobs erfasst." />
+        <EmptyState
+          title="Noch keine Kunden"
+          description="Lege zuerst einen Kunden mit Rechnungsadresse an. Danach kannst du direkt den ersten Job erfassen."
+          action={<ButtonLink href="/customers/new">Kunde anlegen</ButtonLink>}
+        />
       ) : (
         <div className="grid gap-3">
           {customers.map((customer) => (
