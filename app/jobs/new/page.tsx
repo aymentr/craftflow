@@ -3,6 +3,8 @@ import { JobForm } from "@/components/jobs/job-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getCustomers } from "@/lib/db/queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewJobPage() {
   const customers = await getCustomers();
 

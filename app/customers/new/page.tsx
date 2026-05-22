@@ -1,6 +1,8 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { CustomerForm } from "@/components/customers/customer-form";
 
+export const dynamic = "force-dynamic";
+
 export default function NewCustomerPage() {
   return (
     <AppShell title="Neuer Kunde">
