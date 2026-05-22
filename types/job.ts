@@ -16,7 +16,10 @@ export type Job = {
 
 export type JobPhoto = {
   id: string;
+  company_id?: string;
   job_id: string;
   file_url: string;
+  storage_bucket?: string | null;
+  storage_path?: string | null;
   created_at: string;
 };

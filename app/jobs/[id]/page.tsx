@@ -59,6 +59,25 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           ) : null}
         </div>
       </section>
+      {job.photos && job.photos.length > 0 ? (
+        <section className="mt-6">
+          <h2 className="mb-3 text-lg font-bold">Fotos</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {job.photos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photo.file_url}
+                target="_blank"
+                rel="noreferrer"
+                className="overflow-hidden rounded-lg border border-zinc-200 bg-white"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.file_url} alt="Jobfoto" className="aspect-square w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-5">
         <h2 className="mb-4 text-lg font-bold">Job bearbeiten</h2>
         <JobForm customers={customers} job={job} action={updateAction} />

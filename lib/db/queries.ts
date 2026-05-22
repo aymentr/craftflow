@@ -3,10 +3,11 @@ import { demoCompany, demoCustomers, demoInvoiceItems, demoInvoices, demoJobs, d
 import type { Company } from "@/types/company";
 import type { Customer } from "@/types/customer";
 import type { Invoice, InvoiceItem, Reminder } from "@/types/invoice";
-import type { Job } from "@/types/job";
+import type { Job, JobPhoto } from "@/types/job";
 
 export type JobWithCustomer = Job & {
   customers?: Pick<Customer, "name" | "business_name"> | null;
+  photos?: JobPhoto[];
 };
 
 export type InvoiceWithCustomer = Invoice & {
@@ -89,17 +90,47 @@ export async function getJobById(id: string): Promise<JobWithCustomer | null> {
     return {
       ...job,
       customers: demoCustomers.find((customer) => customer.id === job.customer_id) ?? null,
+      photos: [],
     };
   }
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data: job, error: jobError } = await supabase
     .from("jobs")
     .select("*, customers(name, business_name)")
     .eq("id", id)
     .maybeSingle();
+  if (jobError) {
+    throw new Error(`Job could not be loaded: ${jobError.message}`);
+  }
 
-  return data;
+  if (!job) return null;
+
+  const { data: photos, error: photosError } = await supabase
+    .from("job_photos")
+    .select("*")
+    .eq("job_id", id)
+    .order("created_at", { ascending: false });
+  if (photosError) {
+    throw new Error(`Job photos could not be loaded: ${photosError.message}`);
+  }
+
+  const photosWithUrls = await Promise.all(
+    (photos ?? []).map(async (photo) => {
+      if (!photo.storage_path) return photo;
+      const { data: signed, error } = await supabase.storage
+        .from(photo.storage_bucket ?? "job-photos")
+        .createSignedUrl(photo.storage_path, 60 * 60);
+
+      if (error) {
+        return photo;
+      }
+
+      return { ...photo, file_url: signed.signedUrl };
+    }),
+  );
+
+  return { ...job, photos: photosWithUrls };
 }
 
 export async function getInvoices(): Promise<InvoiceWithCustomer[]> {
