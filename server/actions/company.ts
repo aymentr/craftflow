@@ -39,11 +39,18 @@ export async function upsertCompany(formData: FormData) {
 
   const existing = await getCurrentCompany();
   if (existing) {
-    await supabase.from("companies").update(input).eq("id", existing.id);
+    const { error } = await supabase.from("companies").update(input).eq("id", existing.id);
+    if (error) {
+      throw new Error(`Company profile could not be updated: ${error.message}`);
+    }
   } else {
-    await supabase.from("companies").insert({ ...input, owner_user_id: auth.user.id });
+    const { error } = await supabase.from("companies").insert({ ...input, owner_user_id: auth.user.id });
+    if (error) {
+      throw new Error(`Company profile could not be saved: ${error.message}`);
+    }
   }
 
   revalidatePath("/settings/company");
   revalidatePath("/dashboard");
+  redirect("/settings/company?saved=1");
 }

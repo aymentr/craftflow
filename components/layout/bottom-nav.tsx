@@ -2,16 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BriefcaseBusiness, FileText, Home, Settings, Users } from "lucide-react";
+import { navItems } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
-
-const items = [
-  { href: "/dashboard", label: "Start", icon: Home },
-  { href: "/customers", label: "Kunden", icon: Users },
-  { href: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
-  { href: "/invoices", label: "Rechnungen", icon: FileText },
-  { href: "/settings/company", label: "Firma", icon: Settings },
-];
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -19,7 +11,7 @@ export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="mx-auto grid max-w-md grid-cols-5">
-        {items.map((item) => {
+        {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (

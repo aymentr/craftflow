@@ -425,31 +425,6 @@ begin
     target_action := 'updated';
   end if;
 
-  if tg_table_name = 'invoices' and tg_op = 'UPDATE' and old.status is distinct from new.status then
-    target_action := case new.status
-      when 'sent' then 'sent'::public.activity_action
-      when 'paid' then 'paid'::public.activity_action
-      when 'cancelled' then 'cancelled'::public.activity_action
-      else 'updated'::public.activity_action
-    end;
-    meta := jsonb_build_object('old_status', old.status, 'new_status', new.status);
-  elsif tg_table_name = 'jobs' and tg_op = 'UPDATE' and old.status is distinct from new.status then
-    target_action := case new.status
-      when 'completed' then 'completed'::public.activity_action
-      when 'invoiced' then 'invoiced'::public.activity_action
-      else 'updated'::public.activity_action
-    end;
-    meta := jsonb_build_object('old_status', old.status, 'new_status', new.status);
-  elsif tg_table_name = 'reminders' and tg_op = 'UPDATE' and old.status is distinct from new.status then
-    target_action := case new.status
-      when 'scheduled' then 'reminder_scheduled'::public.activity_action
-      when 'sent' then 'reminder_sent'::public.activity_action
-      when 'failed' then 'reminder_failed'::public.activity_action
-      else 'updated'::public.activity_action
-    end;
-    meta := jsonb_build_object('old_status', old.status, 'new_status', new.status);
-  end if;
-
   insert into public.activity_logs (company_id, entity_type, entity_id, action, metadata)
   values (target_company_id, target_entity_type, target_entity_id, target_action, meta);
 

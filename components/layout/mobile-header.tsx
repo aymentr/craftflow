@@ -4,7 +4,7 @@ import { logout } from "@/server/actions/auth";
 
 export function MobileHeader({ title }: { title?: string }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-zinc-200 bg-stone-50/95 px-4 py-3 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-zinc-200 bg-stone-50/95 px-4 py-3 backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-5xl items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
           <span className="grid size-9 place-items-center rounded-lg bg-emerald-700 text-sm font-black text-white">

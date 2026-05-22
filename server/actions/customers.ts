@@ -26,8 +26,13 @@ export async function createCustomer(formData: FormData) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const company = await getCurrentCompany();
-    if (company) {
-      await supabase.from("customers").insert({ ...input, company_id: company.id });
+    if (!company) {
+      redirect("/settings/company?error=company-required");
+    }
+
+    const { error } = await supabase.from("customers").insert({ ...input, company_id: company.id });
+    if (error) {
+      throw new Error(`Customer could not be saved: ${error.message}`);
     }
   }
 
@@ -56,7 +61,10 @@ export async function updateCustomerById(customerId: string, formData: FormData)
     const supabase = await createClient();
     const company = await getCurrentCompany();
     if (company) {
-      await supabase.from("customers").update(input).eq("id", customerId).eq("company_id", company.id);
+      const { error } = await supabase.from("customers").update(input).eq("id", customerId).eq("company_id", company.id);
+      if (error) {
+        throw new Error(`Customer could not be updated: ${error.message}`);
+      }
     }
   }
 

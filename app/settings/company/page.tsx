@@ -4,12 +4,27 @@ import { Field, Input } from "@/components/ui/field";
 import { getCurrentCompany } from "@/lib/db/queries";
 import { upsertCompany } from "@/server/actions/company";
 
-export default async function CompanySettingsPage() {
+export default async function CompanySettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ saved?: string; error?: string }>;
+}) {
   const company = await getCurrentCompany();
+  const params = searchParams ? await searchParams : {};
 
   return (
     <AppShell title="Firma">
       <h1 className="mb-5 text-2xl font-bold">Firmenprofil</h1>
+      {params.saved ? (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
+          Firmenprofil gespeichert.
+        </div>
+      ) : null}
+      {params.error === "company-required" ? (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+          Lege zuerst dein Firmenprofil an. Danach kannst du Kunden und Jobs speichern.
+        </div>
+      ) : null}
       <form action={upsertCompany} className="grid gap-4 rounded-lg border border-zinc-200 bg-white p-5">
         <Field label="Firmenname">
           <Input name="name" defaultValue={company?.name ?? ""} required />

@@ -23,9 +23,18 @@ export async function getCurrentCompany(): Promise<Company | null> {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
   const { data } = await supabase
     .from("companies")
     .select("*")
+    .eq("owner_user_id", user.id)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -39,7 +48,10 @@ export async function getCustomers(): Promise<Customer[]> {
   }
 
   const supabase = await createClient();
-  const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
+  if (error) {
+    throw new Error(`Customers could not be loaded: ${error.message}`);
+  }
   return data ?? [];
 }
 
