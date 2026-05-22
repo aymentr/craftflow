@@ -28,6 +28,10 @@ CRON_SECRET=
 
 `SUPABASE_SERVICE_ROLE_KEY` is only used by the reminder processing route. Never expose it to the browser.
 
+Local development can run without Supabase values; that enables demo mode. Production requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+
+`RESEND_API_KEY` and `INVOICE_FROM_EMAIL` are optional until email sending is configured. If either is missing, invoice email sending is disabled in the UI and PDF download still works.
+
 ## Supabase Setup
 
 Run [lib/db/schema.sql](./lib/db/schema.sql) in the Supabase SQL editor. It creates:
@@ -48,6 +52,42 @@ curl -X POST https://your-app.example.com/api/reminders/process \
 ```
 
 The route sends due reminders, marks reminder status, and updates sent invoices to overdue when appropriate.
+
+The reminder endpoint requires:
+
+- `CRON_SECRET`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+
+If invoice email sending is not configured with Resend, due reminders are marked failed with the send error.
+
+## Production Checklist
+
+1. Create a Supabase project.
+2. Run [lib/db/schema.sql](./lib/db/schema.sql) in the Supabase SQL editor.
+3. Verify the private Storage buckets exist:
+   - `job-photos`
+   - `invoice-pdfs`
+4. Set production environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `CRON_SECRET`
+5. Optional email setup:
+   - verify a sending domain in Resend
+   - set `RESEND_API_KEY`
+   - set `INVOICE_FROM_EMAIL`, for example `CraftFlow <rechnung@example.com>`
+6. Deploy the app.
+7. Smoke test production:
+   - signup/login
+   - company profile save
+   - customer create
+   - job create with photo upload
+   - job completion
+   - invoice generation
+   - invoice PDF download
+   - mark invoice paid
+8. Configure a cron scheduler to call `/api/reminders/process` with `Authorization: Bearer $CRON_SECRET`.
 
 ## Current MVP Surface
 

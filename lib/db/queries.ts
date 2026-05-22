@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { demoCompany, demoCustomers, demoInvoiceItems, demoInvoices, demoJobs, demoReminders } from "@/lib/demo-data";
+import { hasSupabaseEnv } from "@/lib/env";
 import type { Company } from "@/types/company";
 import type { Customer } from "@/types/customer";
 import type { Invoice, InvoiceItem, Reminder } from "@/types/invoice";
@@ -14,9 +15,7 @@ export type InvoiceWithCustomer = Invoice & {
   customers?: Pick<Customer, "name" | "business_name"> | null;
 };
 
-export function hasSupabaseEnv() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-}
+export { hasSupabaseEnv };
 
 export async function getCurrentCompany(): Promise<Company | null> {
   if (!hasSupabaseEnv()) {

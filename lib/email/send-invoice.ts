@@ -1,8 +1,7 @@
 import { Resend } from "resend";
+import { hasInvoiceEmailConfig } from "@/lib/env";
 
-export function hasInvoiceEmailConfig() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.INVOICE_FROM_EMAIL);
-}
+export { hasInvoiceEmailConfig };
 
 export async function sendInvoiceEmail({
   to,

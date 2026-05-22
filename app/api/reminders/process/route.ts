@@ -1,7 +1,14 @@
 import { sendInvoiceEmail } from "@/lib/email/send-invoice";
+import { requireCronSecret } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
+  try {
+    requireCronSecret();
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "Missing cron secret." }, { status: 500 });
+  }
+
   const cronSecret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
@@ -9,7 +16,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "Supabase admin configuration error." }, { status: 500 });
+  }
   const now = new Date().toISOString();
 
   const { data: reminders, error } = await supabase
