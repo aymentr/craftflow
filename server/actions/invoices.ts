@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { calculateInvoice, dueDateFromTerms } from "@/lib/invoice/calculate";
-import { sendInvoiceEmail } from "@/lib/email/send-invoice";
+import { hasInvoiceEmailConfig, sendInvoiceEmail } from "@/lib/email/send-invoice";
 import { getCurrentCompany, hasSupabaseEnv } from "@/lib/db/queries";
 import { generateInvoicePdfBuffer } from "@/lib/pdf/invoice-pdf";
 import { createClient } from "@/lib/supabase/server";
@@ -191,6 +191,10 @@ export async function generateInvoicePDF(invoiceId: string) {
 }
 
 export async function sendInvoice(invoiceId: string) {
+  if (!hasInvoiceEmailConfig()) {
+    throw new Error("E-Mail Versand ist noch nicht eingerichtet.");
+  }
+
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const company = await getCurrentCompany();

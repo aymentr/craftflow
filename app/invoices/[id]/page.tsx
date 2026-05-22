@@ -8,6 +8,7 @@ import { InvoicePreview } from "@/components/invoices/invoice-preview";
 import { ReminderStatus } from "@/components/reminders/reminder-status";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getInvoiceBundle } from "@/lib/db/queries";
+import { hasInvoiceEmailConfig } from "@/lib/email/send-invoice";
 import { cancelInvoice, generateInvoicePDF, markInvoicePaid, sendInvoice } from "@/server/actions/invoices";
 import { scheduleReminder } from "@/server/actions/reminders";
 
@@ -22,6 +23,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const hasScheduledReminder = reminders.some((reminder) => reminder.status === "scheduled");
   const canCancel = invoice.status !== "paid" && invoice.status !== "cancelled";
   const sendLabel = invoice.status === "draft" ? "Senden" : "Erneut senden";
+  const emailConfigured = hasInvoiceEmailConfig();
 
   return (
     <AppShell title="Rechnung">
@@ -41,8 +43,13 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </div>
           ) : null}
           <InvoiceForm invoice={invoice} items={items} />
+          {!emailConfigured ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+              E-Mail Versand ist noch nicht eingerichtet. PDF-Download funktioniert weiterhin.
+            </div>
+          ) : null}
           <form action={sendInvoice.bind(null, invoice.id)}>
-            <Button type="submit" className="w-full" disabled={!canSend}><Mail size={18} /> {sendLabel}</Button>
+            <Button type="submit" className="w-full" disabled={!canSend || !emailConfigured}><Mail size={18} /> {sendLabel}</Button>
           </form>
           <form action={generateInvoicePDF.bind(null, invoice.id)}>
             <Button type="submit" variant="secondary" className="w-full" disabled={invoice.status === "cancelled"}>

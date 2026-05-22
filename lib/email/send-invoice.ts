@@ -1,5 +1,9 @@
 import { Resend } from "resend";
 
+export function hasInvoiceEmailConfig() {
+  return Boolean(process.env.RESEND_API_KEY && process.env.INVOICE_FROM_EMAIL);
+}
+
 export async function sendInvoiceEmail({
   to,
   invoiceNumber,
@@ -11,13 +15,13 @@ export async function sendInvoiceEmail({
   pdfUrl?: string | null;
   pdfBuffer?: Buffer | null;
 }) {
-  if (!process.env.RESEND_API_KEY) {
-    return { skipped: true, reason: "RESEND_API_KEY is not configured." };
+  if (!hasInvoiceEmailConfig()) {
+    throw new Error("E-Mail Versand ist noch nicht eingerichtet.");
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   return resend.emails.send({
-    from: process.env.INVOICE_FROM_EMAIL ?? "CraftFlow <invoices@example.com>",
+    from: process.env.INVOICE_FROM_EMAIL!,
     to,
     subject: `Rechnung ${invoiceNumber}`,
     html: `<p>Guten Tag,</p><p>anbei erhalten Sie Rechnung ${invoiceNumber}.</p>${
