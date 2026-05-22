@@ -13,18 +13,30 @@ function formValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "");
 }
 
+function assertSupabaseSuccess(error: { message: string } | null, message: string) {
+  if (error) {
+    throw new Error(`${message}: ${error.message}`);
+  }
+}
+
 async function generateAndStoreInvoicePdf(invoiceId: string) {
   const supabase = await createClient();
-  const { data: invoice } = await supabase.from("invoices").select("*").eq("id", invoiceId).maybeSingle();
-  if (!invoice) return null;
+  const { data: invoice, error: invoiceError } = await supabase.from("invoices").select("*").eq("id", invoiceId).maybeSingle();
+  assertSupabaseSuccess(invoiceError, "Invoice could not be loaded");
+  if (!invoice) throw new Error("Invoice could not be loaded.");
 
-  const [{ data: company }, { data: customer }, { data: items }] = await Promise.all([
+  const [{ data: company, error: companyError }, { data: customer, error: customerError }, { data: items, error: itemsError }] = await Promise.all([
     supabase.from("companies").select("*").eq("id", invoice.company_id).maybeSingle(),
     supabase.from("customers").select("*").eq("id", invoice.customer_id).maybeSingle(),
     supabase.from("invoice_items").select("*").eq("invoice_id", invoice.id).order("sort_order"),
   ]);
+  assertSupabaseSuccess(companyError, "Company could not be loaded");
+  assertSupabaseSuccess(customerError, "Customer could not be loaded");
+  assertSupabaseSuccess(itemsError, "Invoice items could not be loaded");
 
-  if (!company || !customer || !items?.length) return null;
+  if (!company || !customer || !items?.length) {
+    throw new Error("Invoice PDF cannot be generated without company, customer and invoice items.");
+  }
 
   const pdfBuffer = await generateInvoicePdfBuffer({ company, customer, invoice, items });
   const storagePath = `${company.id}/${invoice.id}/${invoice.invoice_number ?? invoice.id}.pdf`;
@@ -36,12 +48,14 @@ async function generateAndStoreInvoicePdf(invoiceId: string) {
       upsert: true,
     });
 
-  if (uploadError) return null;
+  assertSupabaseSuccess(uploadError, "Invoice PDF could not be uploaded");
 
-  const { data: signed } = await supabase.storage.from("invoice-pdfs").createSignedUrl(storagePath, 60 * 60 * 24 * 30);
+  const { data: signed, error: signedUrlError } = await supabase.storage.from("invoice-pdfs").createSignedUrl(storagePath, 60 * 60 * 24 * 30);
+  assertSupabaseSuccess(signedUrlError, "Invoice PDF signed URL could not be created");
   const pdfUrl = signed?.signedUrl ?? storagePath;
 
-  await supabase.from("invoices").update({ pdf_url: pdfUrl }).eq("id", invoiceId).eq("company_id", company.id);
+  const { error: updateError } = await supabase.from("invoices").update({ pdf_url: pdfUrl }).eq("id", invoiceId).eq("company_id", company.id);
+  assertSupabaseSuccess(updateError, "Invoice PDF URL could not be saved");
 
   return {
     pdfUrl,
@@ -57,7 +71,8 @@ export async function generateInvoiceFromJob(jobId: string) {
 
   const supabase = await createClient();
   const company = await getCurrentCompany();
-  const { data: job } = await supabase.from("jobs").select("*, customers(*)").eq("id", jobId).maybeSingle();
+  const { data: job, error: jobError } = await supabase.from("jobs").select("*, customers(*)").eq("id", jobId).maybeSingle();
+  assertSupabaseSuccess(jobError, "Job could not be loaded");
 
   if (!company || !job || job.company_id !== company.id) {
     redirect(`/jobs/${jobId}`);
@@ -74,7 +89,7 @@ export async function generateInvoiceFromJob(jobId: string) {
     },
   ]);
 
-  const { data: invoice } = await supabase
+  const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
     .insert({
       company_id: company.id,
@@ -92,9 +107,10 @@ export async function generateInvoiceFromJob(jobId: string) {
     })
     .select("id")
     .single();
+  assertSupabaseSuccess(invoiceError, "Invoice could not be created");
 
   if (invoice) {
-    await supabase.from("invoice_items").insert(
+    const { error: itemsError } = await supabase.from("invoice_items").insert(
       calculated.items.map((item, index) => ({
         company_id: company.id,
         invoice_id: invoice.id,
@@ -102,7 +118,10 @@ export async function generateInvoiceFromJob(jobId: string) {
         ...item,
       })),
     );
-    await supabase.from("jobs").update({ status: "invoiced" }).eq("id", job.id);
+    assertSupabaseSuccess(itemsError, "Invoice items could not be created");
+
+    const { error: jobUpdateError } = await supabase.from("jobs").update({ status: "invoiced" }).eq("id", job.id).eq("company_id", company.id);
+    assertSupabaseSuccess(jobUpdateError, "Job could not be marked invoiced");
     redirect(`/invoices/${invoice.id}`);
   }
 
@@ -129,7 +148,7 @@ export async function updateInvoice(formData: FormData) {
 
     if (company && rawItems.length > 0) {
       const calculated = calculateInvoice(rawItems);
-      await supabase
+      const { error: invoiceError } = await supabase
         .from("invoices")
         .update({
           issue_date: issueDate,
@@ -141,9 +160,12 @@ export async function updateInvoice(formData: FormData) {
         .eq("id", invoiceId)
         .eq("company_id", company.id)
         .eq("status", "draft");
+      assertSupabaseSuccess(invoiceError, "Invoice could not be updated");
 
-      await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId).eq("company_id", company.id);
-      await supabase.from("invoice_items").insert(
+      const { error: deleteItemsError } = await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId).eq("company_id", company.id);
+      assertSupabaseSuccess(deleteItemsError, "Invoice items could not be replaced");
+
+      const { error: insertItemsError } = await supabase.from("invoice_items").insert(
         calculated.items.map((item, index) => ({
           company_id: company.id,
           invoice_id: invoiceId,
@@ -151,6 +173,7 @@ export async function updateInvoice(formData: FormData) {
           ...item,
         })),
       );
+      assertSupabaseSuccess(insertItemsError, "Invoice items could not be saved");
     }
   }
 
@@ -169,7 +192,8 @@ export async function sendInvoice(invoiceId: string) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const company = await getCurrentCompany();
-    const { data: invoice } = await supabase.from("invoices").select("*, customers(email)").eq("id", invoiceId).maybeSingle();
+    const { data: invoice, error: invoiceError } = await supabase.from("invoices").select("*, customers(email)").eq("id", invoiceId).maybeSingle();
+    assertSupabaseSuccess(invoiceError, "Invoice could not be loaded");
     const pdf = await generateAndStoreInvoicePdf(invoiceId);
     const pdfUrl = pdf?.pdfUrl ?? invoice?.pdf_url ?? null;
 
@@ -181,22 +205,25 @@ export async function sendInvoice(invoiceId: string) {
         pdfBuffer: pdf?.pdfBuffer,
       });
 
-      const { count } = await supabase
+      const { count, error: countError } = await supabase
         .from("reminders")
         .select("id", { count: "exact", head: true })
         .eq("invoice_id", invoiceId);
+      assertSupabaseSuccess(countError, "Reminders could not be checked");
 
       if ((count ?? 0) === 0) {
-        await supabase.from("reminders").insert({
+        const { error: reminderError } = await supabase.from("reminders").insert({
           company_id: company.id,
           invoice_id: invoiceId,
           reminder_number: 1,
           scheduled_for: new Date(`${invoice.due_date}T08:00:00.000Z`).toISOString(),
           status: "scheduled",
         });
+        assertSupabaseSuccess(reminderError, "Reminder could not be scheduled");
       }
     }
-    await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", invoiceId);
+    const { error: updateError } = await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", invoiceId);
+    assertSupabaseSuccess(updateError, "Invoice could not be marked sent");
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
@@ -205,7 +232,13 @@ export async function sendInvoice(invoiceId: string) {
 export async function markInvoicePaid(invoiceId: string) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
-    await supabase.from("invoices").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", invoiceId);
+    const company = await getCurrentCompany();
+    if (!company) {
+      redirect("/settings/company?error=company-required");
+    }
+
+    const { error } = await supabase.from("invoices").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", invoiceId).eq("company_id", company.id);
+    assertSupabaseSuccess(error, "Invoice could not be marked paid");
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
@@ -214,10 +247,17 @@ export async function markInvoicePaid(invoiceId: string) {
 export async function cancelInvoice(invoiceId: string) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
-    await supabase
+    const company = await getCurrentCompany();
+    if (!company) {
+      redirect("/settings/company?error=company-required");
+    }
+
+    const { error } = await supabase
       .from("invoices")
       .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-      .eq("id", invoiceId);
+      .eq("id", invoiceId)
+      .eq("company_id", company.id);
+    assertSupabaseSuccess(error, "Invoice could not be cancelled");
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");

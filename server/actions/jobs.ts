@@ -10,6 +10,12 @@ function formValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "");
 }
 
+function assertSupabaseSuccess(error: { message: string } | null, message: string) {
+  if (error) {
+    throw new Error(`${message}: ${error.message}`);
+  }
+}
+
 export async function createJob(formData: FormData) {
   const input = jobSchema.parse({
     customer_id: formValue(formData, "customer_id"),
@@ -24,13 +30,16 @@ export async function createJob(formData: FormData) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const company = await getCurrentCompany();
-    if (company) {
-      await supabase.from("jobs").insert({
-        ...input,
-        company_id: company.id,
-        completed_at: input.status === "completed" || input.status === "invoiced" ? new Date().toISOString() : null,
-      });
+    if (!company) {
+      redirect("/settings/company?error=company-required");
     }
+
+    const { error } = await supabase.from("jobs").insert({
+      ...input,
+      company_id: company.id,
+      completed_at: input.status === "completed" || input.status === "invoiced" ? new Date().toISOString() : null,
+    });
+    assertSupabaseSuccess(error, "Job could not be saved");
   }
 
   revalidatePath("/jobs");
@@ -40,7 +49,17 @@ export async function createJob(formData: FormData) {
 export async function completeJob(jobId: string) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
-    await supabase.from("jobs").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", jobId);
+    const company = await getCurrentCompany();
+    if (!company) {
+      redirect("/settings/company?error=company-required");
+    }
+
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .eq("company_id", company.id);
+    assertSupabaseSuccess(error, "Job could not be completed");
   }
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
@@ -60,16 +79,19 @@ export async function updateJobById(jobId: string, formData: FormData) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const company = await getCurrentCompany();
-    if (company) {
-      await supabase
-        .from("jobs")
-        .update({
-          ...input,
-          completed_at: input.status === "completed" || input.status === "invoiced" ? new Date().toISOString() : null,
-        })
-        .eq("id", jobId)
-        .eq("company_id", company.id);
+    if (!company) {
+      redirect("/settings/company?error=company-required");
     }
+
+    const { error } = await supabase
+      .from("jobs")
+      .update({
+        ...input,
+        completed_at: input.status === "completed" || input.status === "invoiced" ? new Date().toISOString() : null,
+      })
+      .eq("id", jobId)
+      .eq("company_id", company.id);
+    assertSupabaseSuccess(error, "Job could not be updated");
   }
 
   revalidatePath("/jobs");
@@ -81,7 +103,8 @@ export async function deleteJobById(jobId: string) {
     const supabase = await createClient();
     const company = await getCurrentCompany();
     if (company) {
-      await supabase.from("jobs").delete().eq("id", jobId).eq("company_id", company.id);
+      const { error } = await supabase.from("jobs").delete().eq("id", jobId).eq("company_id", company.id);
+      assertSupabaseSuccess(error, "Job could not be deleted");
     }
   }
 
