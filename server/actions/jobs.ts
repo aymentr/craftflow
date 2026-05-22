@@ -103,7 +103,7 @@ export async function createJob(formData: FormData) {
   }
 
   revalidatePath("/jobs");
-  redirect("/jobs");
+  redirect("/jobs?saved=1");
 }
 
 export async function completeJob(jobId: string) {
@@ -123,7 +123,7 @@ export async function completeJob(jobId: string) {
   }
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
-  redirect("/jobs");
+  redirect("/jobs?completed=1");
 }
 
 export async function updateJobById(jobId: string, formData: FormData) {
@@ -158,7 +158,7 @@ export async function updateJobById(jobId: string, formData: FormData) {
 
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
-  redirect("/jobs");
+  redirect("/jobs?updated=1");
 }
 
 export async function deleteJobById(jobId: string) {
@@ -172,7 +172,7 @@ export async function deleteJobById(jobId: string) {
   }
 
   revalidatePath("/jobs");
-  redirect("/jobs");
+  redirect("/jobs?deleted=1");
 }
 
 export async function uploadJobPhoto() {

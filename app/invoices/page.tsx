@@ -1,12 +1,18 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { customerDisplayName, getInvoices } from "@/lib/db/queries";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ saved?: string; pdf?: string; sent?: string; paid?: string; cancelled?: string }>;
+}) {
   const invoices = await getInvoices();
+  const params = searchParams ? await searchParams : {};
 
   return (
     <AppShell title="Rechnungen">
@@ -14,6 +20,11 @@ export default async function InvoicesPage() {
         <h1 className="text-2xl font-bold">Rechnungen</h1>
         <p className="text-sm text-zinc-600">Entwürfe, offene Beträge und Zahlungseingänge.</p>
       </div>
+      {params.saved ? <Notice>Rechnung gespeichert.</Notice> : null}
+      {params.pdf ? <Notice>PDF erstellt.</Notice> : null}
+      {params.sent ? <Notice>Rechnung gesendet.</Notice> : null}
+      {params.paid ? <Notice>Rechnung als bezahlt markiert.</Notice> : null}
+      {params.cancelled ? <Notice>Rechnung storniert.</Notice> : null}
       {invoices.length === 0 ? (
         <EmptyState
           title="Noch keine Rechnungen"

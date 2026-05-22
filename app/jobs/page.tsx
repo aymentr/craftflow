@@ -2,12 +2,18 @@ import { AppShell } from "@/components/layout/app-shell";
 import { QuickActionButton } from "@/components/layout/quick-action-button";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { customerDisplayName, getJobs } from "@/lib/db/queries";
 import { formatDate } from "@/lib/utils";
 
-export default async function JobsPage() {
+export default async function JobsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ saved?: string; updated?: string; completed?: string; deleted?: string }>;
+}) {
   const jobs = await getJobs();
+  const params = searchParams ? await searchParams : {};
 
   return (
     <AppShell title="Jobs">
@@ -18,6 +24,10 @@ export default async function JobsPage() {
         </div>
         <div className="hidden md:block"><QuickActionButton href="/jobs/new" label="Job" /></div>
       </div>
+      {params.saved ? <Notice>Job gespeichert.</Notice> : null}
+      {params.updated ? <Notice>Job aktualisiert.</Notice> : null}
+      {params.completed ? <Notice>Job als erledigt markiert.</Notice> : null}
+      {params.deleted ? <Notice>Job gelöscht.</Notice> : null}
       {jobs.length === 0 ? (
         <EmptyState
           title="Noch keine Jobs"

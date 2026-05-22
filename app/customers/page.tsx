@@ -2,10 +2,16 @@ import { AppShell } from "@/components/layout/app-shell";
 import { QuickActionButton } from "@/components/layout/quick-action-button";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
 import { getCustomers } from "@/lib/db/queries";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ saved?: string; updated?: string; deleted?: string }>;
+}) {
   const customers = await getCustomers();
+  const params = searchParams ? await searchParams : {};
 
   return (
     <AppShell title="Kunden">
@@ -16,6 +22,9 @@ export default async function CustomersPage() {
         </div>
         <div className="hidden md:block"><QuickActionButton href="/customers/new" label="Kunde" /></div>
       </div>
+      {params.saved ? <Notice>Kunde gespeichert.</Notice> : null}
+      {params.updated ? <Notice>Kunde aktualisiert.</Notice> : null}
+      {params.deleted ? <Notice>Kunde gelöscht.</Notice> : null}
       {customers.length === 0 ? (
         <EmptyState
           title="Noch keine Kunden"

@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { Notice } from "@/components/ui/notice";
 import { getCurrentCompany } from "@/lib/db/queries";
 import { upsertCompany } from "@/server/actions/company";
 
@@ -16,14 +17,10 @@ export default async function CompanySettingsPage({
     <AppShell title="Firma">
       <h1 className="mb-5 text-2xl font-bold">Firmenprofil</h1>
       {params.saved ? (
-        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
-          Firmenprofil gespeichert.
-        </div>
+        <Notice>Firmenprofil gespeichert.</Notice>
       ) : null}
       {params.error === "company-required" ? (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
-          Lege zuerst dein Firmenprofil an. Danach kannst du Kunden und Jobs speichern.
-        </div>
+        <Notice variant="warning">Lege zuerst dein Firmenprofil an. Danach kannst du Kunden und Jobs speichern.</Notice>
       ) : null}
       <form action={upsertCompany} className="grid gap-4 rounded-lg border border-zinc-200 bg-white p-5">
         <Field label="Firmenname">
