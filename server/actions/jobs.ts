@@ -123,6 +123,7 @@ export async function completeJob(jobId: string) {
   }
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
+  redirect("/jobs");
 }
 
 export async function updateJobById(jobId: string, formData: FormData) {
@@ -157,6 +158,7 @@ export async function updateJobById(jobId: string, formData: FormData) {
 
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
+  redirect("/jobs");
 }
 
 export async function deleteJobById(jobId: string) {

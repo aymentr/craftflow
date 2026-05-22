@@ -178,6 +178,7 @@ export async function updateInvoice(formData: FormData) {
   }
 
   revalidatePath(invoiceId ? `/invoices/${invoiceId}` : "/invoices");
+  redirect("/invoices");
 }
 
 export async function generateInvoicePDF(invoiceId: string) {
@@ -186,6 +187,7 @@ export async function generateInvoicePDF(invoiceId: string) {
   }
 
   revalidatePath(`/invoices/${invoiceId}`);
+  redirect("/invoices");
 }
 
 export async function sendInvoice(invoiceId: string) {
@@ -227,6 +229,7 @@ export async function sendInvoice(invoiceId: string) {
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
+  redirect("/invoices");
 }
 
 export async function markInvoicePaid(invoiceId: string) {
@@ -242,6 +245,7 @@ export async function markInvoicePaid(invoiceId: string) {
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
+  redirect("/invoices");
 }
 
 export async function cancelInvoice(invoiceId: string) {
@@ -261,4 +265,5 @@ export async function cancelInvoice(invoiceId: string) {
   }
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
+  redirect("/invoices");
 }
