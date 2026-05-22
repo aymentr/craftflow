@@ -11,9 +11,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       <div className="min-w-0 flex-1">
         <MobileHeader title={title} />
         <main className="mx-auto w-full max-w-5xl px-4 py-5 md:py-8">
-          <div className="mb-4">
-            <BackButton />
-          </div>
+          <BackButton />
           {children}
         </main>
       </div>
